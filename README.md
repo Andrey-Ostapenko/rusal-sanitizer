@@ -158,15 +158,9 @@ orders.comment у того же клиента
 
 ```mermaid
 graph TD
-    subgraph Настройка["Фаза настройки"]
-        scan["scan_columns"]
-    end
-    subgraph Прогон["Фаза прогона"]
-        myanon["myanon"] --> subst["text_substitute"]
-    end
-    subgraph Проверка["checks — поставляется"]
-        determ["checks.determinism"] --> verify["checks.verify"]
-    end
+    scan["scan_columns<br/><i>настройка</i>"]
+    myanon["myanon"] --> subst["text_substitute<br/><i>прогон</i>"]
+    determ["checks.determinism"] --> verify["checks.verify"]
 
     db_schema(["db_schema"])
     sql_parse(["sql_parse"])

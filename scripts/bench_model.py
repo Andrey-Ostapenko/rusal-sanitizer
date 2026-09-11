@@ -17,7 +17,7 @@
 Модель вызывается через шлюз Docker Model Runner, совместимый с OpenAI API.
 
 Использование:
-    python3 -m sanitizer.bench_model [имя_модели] [сколько_строк]
+    python3 scripts/bench_model.py [имя_модели] [сколько_строк]
 """
 import json
 import re
@@ -25,8 +25,15 @@ import sys
 import urllib.error
 import urllib.request
 
-from . import paths
-from .sql_parse import parse_inserts, unquote
+try:
+    from sanitizer import paths
+    from sanitizer.sql_parse import parse_inserts, unquote
+except ImportError:  # запуск из исходников, пакет не установлен
+    import os
+    sys.path.insert(0, os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", "src"))
+    from sanitizer import paths
+    from sanitizer.sql_parse import parse_inserts, unquote
 
 ENDPOINT = "http://localhost:12434/engines/v1/chat/completions"
 DEFAULT_MODEL = "ai/qwen3:14b-q4_K_M"

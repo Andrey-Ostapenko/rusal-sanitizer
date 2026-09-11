@@ -154,54 +154,57 @@ orders.comment у того же клиента
 Граф снят с кода разбором импортов на действующей раскладке, а не нарисован
 по памяти.
 
+**Конвейер — то, что участвует в санитизации.**
+
 ```mermaid
 graph TD
     subgraph Настройка["Фаза настройки"]
         scan["scan_columns"]
     end
-
     subgraph Прогон["Фаза прогона"]
         myanon["myanon"] --> subst["text_substitute"]
     end
-
     subgraph Проверка["checks — поставляется"]
         determ["checks.determinism"] --> verify["checks.verify"]
-    end
-
-    subgraph Замер["Замер детектора — вне прогона"]
-        detect["detect"]
-        test["test_control_set"]
-        control["control_check"]
     end
 
     db_schema(["db_schema"])
     sql_parse(["sql_parse"])
     pii(["pii_patterns"])
     names(["names"])
-    guard(["loop_guard"])
-    gen["generate_demo_dump"]
 
     scan --> db_schema
     scan --> sql_parse
     scan --> pii
-
     subst --> sql_parse
     subst --> names
     subst --> pii
-
     verify --> sql_parse
     verify --> pii
     verify -.->|"оговорка ниже"| subst
+```
+
+**Замер детектора — в санитизации не участвует.**
+
+```mermaid
+graph TD
+    detect["detect"]
+    test["test_control_set"]
+    control["control_check"]
+    gen["generate_demo_dump"]
+    guard(["loop_guard"])
+    pii2(["pii_patterns"])
 
     detect --> control
     detect --> guard
-    detect --> pii
     test --> control
-    control --> pii
-    gen --> pii
+    control --> pii2
+    detect --> pii2
+    gen --> pii2
 ```
 
 Скруглённые узлы — основания: своих зависимостей внутри решения у них нет.
+`pii_patterns` показан на обеих схемах — это один и тот же модуль.
 
 | Модуль | Что делает |
 |---|---|

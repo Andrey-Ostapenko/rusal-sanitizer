@@ -1,0 +1,360 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Санитизация базы MySQL",
+    "output": "architecture.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "run",
+        "label": "Фаза прогона",
+        "focus": [
+          "src",
+          "dump",
+          "myanon",
+          "subst",
+          "clean",
+          "out"
+        ],
+        "note": "Рабочий прогон: по готовому конфигу, без модели и без сети."
+      },
+      {
+        "id": "setup",
+        "label": "Фаза настройки",
+        "focus": [
+          "dump",
+          "scan",
+          "build",
+          "human",
+          "conf"
+        ],
+        "note": "Один раз на новую базу: модель находит колонки, конфиг собирает код, человек принимает дифф."
+      },
+      {
+        "id": "checks",
+        "label": "Проверка и виток цикла",
+        "focus": [
+          "dump",
+          "clean",
+          "verify",
+          "scan"
+        ],
+        "note": "Семь проверок сравнивают исходный и очищенный дампы. Остались ПДн — новый виток настройки."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "src",
+      "type": "database",
+      "label": "База MySQL",
+      "sublabel": "исходная",
+      "pos": [
+        100,
+        330
+      ],
+      "size": [
+        130,
+        60
+      ]
+    },
+    {
+      "id": "dump",
+      "type": "external",
+      "label": "Исходный дамп",
+      "sublabel": "mysqldump",
+      "pos": [
+        310,
+        330
+      ],
+      "size": [
+        130,
+        60
+      ]
+    },
+    {
+      "id": "myanon",
+      "type": "backend",
+      "label": "myanon",
+      "sublabel": "замена в колонках",
+      "pos": [
+        520,
+        330
+      ],
+      "size": [
+        140,
+        60
+      ],
+      "tag": "BSD, доработан"
+    },
+    {
+      "id": "subst",
+      "type": "backend",
+      "label": "Слой подстановки",
+      "sublabel": "весь дамп как текст",
+      "pos": [
+        730,
+        330
+      ],
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "clean",
+      "type": "external",
+      "label": "Очищенный дамп",
+      "sublabel": "результат",
+      "pos": [
+        950,
+        330
+      ],
+      "size": [
+        130,
+        60
+      ]
+    },
+    {
+      "id": "out",
+      "type": "database",
+      "label": "База MySQL",
+      "sublabel": "очищенная",
+      "pos": [
+        1160,
+        330
+      ],
+      "size": [
+        130,
+        60
+      ]
+    },
+    {
+      "id": "scan",
+      "type": "cloud",
+      "label": "Сканер колонок",
+      "sublabel": "модель находит ПДн",
+      "pos": [
+        250,
+        120
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": "локальная модель"
+    },
+    {
+      "id": "build",
+      "type": "backend",
+      "label": "Сборка конфига",
+      "sublabel": "детерминированный код",
+      "pos": [
+        480,
+        120
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": "не реализовано"
+    },
+    {
+      "id": "human",
+      "type": "security",
+      "label": "Человек",
+      "sublabel": "принимает дифф",
+      "pos": [
+        710,
+        120
+      ],
+      "size": [
+        130,
+        64
+      ]
+    },
+    {
+      "id": "conf",
+      "type": "external",
+      "label": "Конфиг myanon",
+      "sublabel": "перечень колонок",
+      "pos": [
+        920,
+        120
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "verify",
+      "type": "security",
+      "label": "Проверки",
+      "sublabel": "семь, машинные",
+      "pos": [
+        950,
+        520
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "tag": "пустая = отказ"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Фаза настройки — один раз на новую базу, с человеком",
+      "wraps": [
+        "scan",
+        "build",
+        "human",
+        "conf"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Фаза прогона — сколько угодно раз, без модели и без сети",
+      "wraps": [
+        "src",
+        "dump",
+        "myanon",
+        "subst",
+        "clean",
+        "out"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "src-dump",
+      "from": "src",
+      "to": "dump",
+      "label": "mysqldump"
+    },
+    {
+      "id": "dump-myanon",
+      "from": "dump",
+      "to": "myanon",
+      "variant": "emphasis"
+    },
+    {
+      "id": "myanon-sub",
+      "from": "myanon",
+      "to": "subst",
+      "variant": "emphasis"
+    },
+    {
+      "id": "sub-clean",
+      "from": "subst",
+      "to": "clean",
+      "variant": "emphasis"
+    },
+    {
+      "id": "clean-out",
+      "from": "clean",
+      "to": "out",
+      "label": "загрузка"
+    },
+    {
+      "id": "dump-scan",
+      "from": "dump",
+      "to": "scan",
+      "label": "образцы значений",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "scan-build",
+      "from": "scan",
+      "to": "build",
+      "label": "типизированные находки",
+      "labelDy": 63
+    },
+    {
+      "id": "build-human",
+      "from": "build",
+      "to": "human",
+      "label": "дифф"
+    },
+    {
+      "id": "human-conf",
+      "from": "human",
+      "to": "conf"
+    },
+    {
+      "id": "conf-myanon",
+      "from": "conf",
+      "to": "myanon",
+      "label": "правила",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "clean-ver",
+      "from": "clean",
+      "to": "verify",
+      "label": "сравнение с исходным",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "ver-scan",
+      "from": "verify",
+      "to": "scan",
+      "label": "остались ПДн — новый виток",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "left",
+      "via": [
+        [
+          1020,
+          650
+        ],
+        [
+          50,
+          650
+        ],
+        [
+          50,
+          152
+        ]
+      ],
+      "labelAt": [
+        520,
+        628
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Принцип",
+      "items": [
+        "Модель находит, детерминированный механизм заменяет",
+        "Вывод модели не исполняется: она отдаёт список находок, конфиг пишет код"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Граница слоёв",
+      "items": [
+        "Формат распознаётся — берёт слой подстановки: телефон, ИНН, СНИЛС, почта",
+        "Формата нет — идёт в конфиг myanon: ФИО, адрес"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Предохранители",
+      "items": [
+        "Ключевые колонки в конфиг не попадают: хеш ключа разрушил бы связи",
+        "Колонки свободного текста правил не получают",
+        "Пустая проверка считается отказом, а не успехом"
+      ]
+    }
+  ]
+}

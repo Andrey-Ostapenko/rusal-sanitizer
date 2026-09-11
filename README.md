@@ -156,49 +156,42 @@ orders.comment у того же клиента
 
 ```mermaid
 graph TD
-    subgraph Прогон["Фаза прогона"]
-        myanon["myanon"]
-        subst["text_substitute"]
-    end
-
-    subgraph Проверка["checks — поставляется"]
-        verify["checks.verify"]
-        determ["checks.determinism"]
-    end
-
     subgraph Настройка["Фаза настройки"]
         scan["scan_columns"]
     end
 
+    subgraph Прогон["Фаза прогона"]
+        myanon["myanon"] --> subst["text_substitute"]
+    end
+
+    subgraph Проверка["checks — поставляется"]
+        determ["checks.determinism"] --> verify["checks.verify"]
+    end
+
     subgraph Замер["Замер детектора — вне прогона"]
         detect["detect"]
-        control["control_check"]
         test["test_control_set"]
+        control["control_check"]
     end
 
-    subgraph Основания["Основания"]
-        pii["pii_patterns"]
-        sql_parse["sql_parse"]
-        db_schema["db_schema"]
-        guard["loop_guard"]
-        names["names"]
-    end
-
+    db_schema(["db_schema"])
+    sql_parse(["sql_parse"])
+    pii(["pii_patterns"])
+    names(["names"])
+    guard(["loop_guard"])
     gen["generate_demo_dump"]
 
-    myanon --> subst
-    subst --> pii
+    scan --> db_schema
+    scan --> sql_parse
+    scan --> pii
+
     subst --> sql_parse
     subst --> names
+    subst --> pii
 
-    verify --> pii
     verify --> sql_parse
+    verify --> pii
     verify -.->|"оговорка ниже"| subst
-    determ --> verify
-
-    scan --> db_schema
-    scan --> pii
-    scan --> sql_parse
 
     detect --> control
     detect --> guard
@@ -207,6 +200,8 @@ graph TD
     control --> pii
     gen --> pii
 ```
+
+Скруглённые узлы — основания: своих зависимостей внутри решения у них нет.
 
 | Модуль | Что делает |
 |---|---|

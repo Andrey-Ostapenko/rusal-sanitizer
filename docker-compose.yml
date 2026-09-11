@@ -1,0 +1,54 @@
+# Сквозная демонстрация: docker compose up
+#
+# Поднимает MySQL, готовит исходную базу, выгружает её, санитизирует,
+# загружает результат во вторую базу и печатает таблицу проверок.
+# После завершения обе базы остаются доступны для сравнения запросами.
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: rusal-sanitizer-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      TZ: Europe/Moscow
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpass"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  sanitizer:
+    build: .
+    container_name: rusal-sanitizer-run
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: rootpass
+      SOURCE_DB: sanitizer_demo
+      TARGET_DB: sanitizer_final
+      # Ключ замен. Передаётся снаружи, в файл не пишется:
+      #   SANITIZE_SECRET='...' docker compose up
+      # Проверка на пустоту стоит в entrypoint.sh, а не здесь: синтаксис
+      # ${VAR:?} в compose требует переменную для ЛЮБОЙ команды, включая
+      # build, config и ps, где секрет не нужен и требовать его неверно.
+      SANITIZE_SECRET: ${SANITIZE_SECRET:-}
+      # Языковая модель здесь не нужна и не вызывается. Она порождает пул
+      # правдоподобных ФИО заранее (`python3 llm_names.py build` на машине,
+      # где модель доступна), пул лежит в name_pool.json и вложен в образ.
+      # Так прогон воспроизводится на машине без модели и без сети.
+    volumes:
+      - ./out:/work
+
+volumes:
+  mysql-data:

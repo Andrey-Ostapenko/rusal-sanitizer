@@ -1,0 +1,21 @@
+# Шаблон конфига санитизации. Секрет НЕ хранится здесь —
+# он подставляется скриптом sanitize.sh из переменной окружения SANITIZE_SECRET.
+#
+# Ограничение инструмента (проверено по исходникам, main/myanon.h:69 и
+# main/configparser.y:272): MAX_LEN = 32. Для emailhash параметр N — длина
+# ХЕШ-части, и должно выполняться N + длина_домена + 1 <= 32.
+# В README myanon это описано неточно («N chars long (including domain)»).
+
+secret = '__SECRET__'
+stats  = 'yes'
+
+tables = {
+  `customers` = {
+    `email`     = emailhash 'example-mail.ru' 10
+    `address`   = texthash 30
+  }
+
+  `employees` = {
+    `email`     = emailhash 'rusal-demo.local' 10
+  }
+}

@@ -24,6 +24,13 @@ SSL="--ssl-verify-server-cert=0"
 
 mkdir -p "$WORK"
 
+# Сверка документации с кодом идёт ПЕРЕД работой, а не после: если README
+# обещает не то, что делает код, дальше незачем. Числа в README вычисляются
+# из данных и из сохранённых отчётов — tests/test_readme_claims.py.
+echo "=== Сверка документации с кодом и тесты ==="
+python3 -m pytest /app/tests -q
+echo
+
 echo "Жду базу $HOST..."
 i=0
 until mysqladmin $SSL ping -h "$HOST" -u "$USER" -p"$PASS" --silent 2>/dev/null; do

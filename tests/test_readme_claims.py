@@ -55,8 +55,8 @@ def test_число_проверок():
 
 def test_сканер_на_демо_базе():
     d = отчёт("scan_demo.json")
-    assert f"принято: {len(d['находки'])}" in README or \
-           f"{len(d['находки'])} колонки принято, {len(d['отброшено'])} отклонено" in README
+    assert (f"{len(d['находки'])} колонки принято, "
+            f"{len(d['отброшено'])} отклонено") in README
 
 
 def test_сканер_на_sakila():

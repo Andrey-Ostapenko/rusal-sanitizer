@@ -12,7 +12,10 @@
 import os
 from pathlib import Path
 
-КОРЕНЬ = Path(__file__).resolve().parents[2]
+# В образе пакет стоит в site-packages, и корень репозитория от него не
+# вычисляется — задаётся через SANITIZER_ROOT, как и остальные каталоги.
+КОРЕНЬ = Path(os.environ.get(
+    "SANITIZER_ROOT", str(Path(__file__).resolve().parents[2])))
 DATA = Path(os.environ.get("SANITIZER_DATA", str(КОРЕНЬ / "data")))
 SCRIPTS = Path(os.environ.get("SANITIZER_SCRIPTS", str(КОРЕНЬ / "scripts")))
 CONFIG = Path(os.environ.get("SANITIZER_CONFIG", str(КОРЕНЬ / "config")))

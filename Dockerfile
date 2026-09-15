@@ -32,17 +32,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=build /src/myanon/main/myanon /usr/local/bin/myanon
 
 WORKDIR /app
-COPY pyproject.toml README.md ./
+# Кроме кода в образ попадает то, на что ссылается README: сверка
+# документации с кодом идёт внутри прогона, значит эти файлы ей нужны.
+# Картинки и 800-килобайтный HTML схемы не копируются — только её источник.
+COPY pyproject.toml README.md llms.txt ./
+COPY tests  ./tests
+COPY docs/architecture.archify.json ./docs/
 COPY src    ./src
 COPY scripts ./scripts
 COPY config ./config
 COPY data   ./data
+COPY measurements ./measurements
 
-RUN pip install --no-cache-dir . && chmod +x /app/scripts/*.sh
+# pytest нужен не для разработки, а для самого прогона: entrypoint сверяет
+# README с кодом перед тем, как что-либо санитизировать.
+RUN pip install --no-cache-dir . pytest && chmod +x /app/scripts/*.sh
 
 # Пакет установлен в site-packages, поэтому путь к данным от него не
 # вычисляется — задаётся явно. См. src/sanitizer/paths.py.
-ENV SANITIZER_DATA=/app/data \
+ENV SANITIZER_ROOT=/app \
+    SANITIZER_DATA=/app/data \
     SANITIZER_SCRIPTS=/app/scripts \
     SANITIZER_CONFIG=/app/config
 

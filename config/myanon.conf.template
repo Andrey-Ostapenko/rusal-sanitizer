@@ -11,11 +11,13 @@ stats  = 'yes'
 
 tables = {
   `customers` = {
-    `email`     = emailhash 'example-mail.ru' 10
     `address`   = texthash 30
+    `email`     = emailhash 'example-mail.ru' 10
+    `full_name` = texthash 30
   }
 
   `employees` = {
     `email`     = emailhash 'rusal-demo.local' 10
+    `full_name` = texthash 30
   }
 }

@@ -23,7 +23,6 @@ import os
 import re
 import sys
 
-from . import names as llm_names
 from . import pii_patterns
 from .sql_parse import parse_inserts, unquote
 
@@ -31,13 +30,6 @@ from .sql_parse import parse_inserts, unquote
 PII_COLUMNS = {
     "customers": ["full_name", "email", "phone", "inn", "address"],
     "employees": ["full_name", "snils", "email"],
-}
-
-# Колонки с ФИО: заменяются правдоподобными именами из пула, порождённого
-# языковой моделью, а не хешем. Пул раздаётся детерминированно (llm_names).
-NAME_COLUMNS = {
-    "customers": ["full_name"],
-    "employees": ["full_name"],
 }
 
 # Минимальная длина значения, участвующего в замене. Защита от того, чтобы
@@ -93,30 +85,12 @@ def main(src_path, san_path, out_path):
     # подстановка остаётся одна и двойная замена невозможна.
     secret = os.environ.get("SANITIZE_SECRET")
 
-    # Правдоподобные ФИО из пула. Пул порождён моделью заранее и лежит в файле,
-    # поэтому сам прогон модели не требует и воспроизводится где угодно.
-    by_name = {}
-    if secret:
-        try:
-            pool = llm_names.load_pool()
-        except (OSError, ValueError, KeyError) as e:
-            print(f"  ВНИМАНИЕ: пул имён недоступен ({e}). ФИО останутся открытыми, "
-                  f"и verify.py на этом прогоне обязан упасть — не принимайте результат.",
-                  file=sys.stderr)
-            pool = None
-        if pool:
-            src_tables = parse_inserts(src_path)
-            originals = set()
-            for table, cols in NAME_COLUMNS.items():
-                if table not in src_tables:
-                    continue
-                tcols, trows = src_tables[table]
-                for col in cols:
-                    if col in tcols:
-                        i = tcols.index(col)
-                        originals.update(unquote(r[i]) for r in trows)
-            by_name = llm_names.assign(originals, pool, secret)
-            mapping.update(by_name)
+    # ФИО заменяет myanon по конфигу, как и адрес: в карту они попадают из
+    # сопоставления дампов вместе с остальными колонками. Пул правдоподобных
+    # имён из пути замены убран — правдоподобная замена создаёт синтетические
+    # персональные данные, а при включённом правиле на full_name пул ещё и
+    # перезаписывал замену из колонки, ломая сквозную замену (замерено:
+    # 3 расхождения из 186 пар).
 
     if secret:
         src_text = open(src_path, encoding="utf-8").read()
@@ -154,8 +128,7 @@ def main(src_path, san_path, out_path):
         f.write(text)
 
     print(f"Значений в карте замен: {len(mapping)}"
-          f" (из колонок: {known}, ФИО из пула модели: {len(by_name)},"
-          f" распознано по формату: {len(by_format)})")
+          f" (из колонок: {known}, распознано по формату: {len(by_format)})")
     print(f"Значений, реально найденных в тексте: {applied}")
     print(f"Всего подстановок: {total}")
     print(f"Записано: {out_path}")

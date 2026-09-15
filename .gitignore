@@ -13,3 +13,7 @@ __pycache__/
 graphify-out/
 .DS_Store
 .gitattributes
+
+# Отчёты прогонов — артефакты, а не исходники
+scan_report.json
+detect_report.json

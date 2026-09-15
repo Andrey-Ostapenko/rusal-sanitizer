@@ -206,4 +206,8 @@ def main(dump_path, out="scan_report.json"):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1] if len(sys.argv) > 1 else paths.данные("demo_dump.sql")))
+    # Второй аргумент — куда положить отчёт. Раньше он молча игнорировался,
+    # и отчёт всегда падал в текущий каталог: найдено прогоном на sakila,
+    # когда отчёт по чужой базе лёг в корень репозитория.
+    аргументы = sys.argv[1:3] or [paths.данные("demo_dump.sql")]
+    sys.exit(main(*аргументы))

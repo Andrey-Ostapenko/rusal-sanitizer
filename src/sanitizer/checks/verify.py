@@ -107,6 +107,24 @@ def сироты(path):
     return проверено, len(битые), битые[:3]
 
 
+def итог(есть_что_сравнивать, нет_нарушений):
+    """
+    Итог одной проверки: True — норма, False — нарушение, None — сравнивать
+    было нечего.
+
+    Пустая проверка не может быть успехом: сломанный разбор дампа и чистая
+    база дают один и тот же вывод «нарушений ноль». Раньше это правило
+    соблюдали три проверки из восьми, а остальные при пустом входе печатали
+    «норма» — замерено на дампе чужой схемы, где ни одна колонка из перечня
+    не встречается. Отдельное состояние нужно, чтобы отказ не выглядел
+    нарушением: «0 из 0» на базе без российских идентификаторов означает не
+    утечку, а то, что проверять было нечего.
+    """
+    if not есть_что_сравнивать:
+        return None
+    return bool(нет_нарушений)
+
+
 def column_values(path):
     """Все значения из колонок, объявленных персональными."""
     tables = parse_inserts(path)
@@ -147,30 +165,29 @@ def main(src_path, out_path):
     # 1. Значения из колонок
     col_vals = column_values(src_path)
     leaked_cols = sorted(v for v in col_vals if v in res)
-    # Пустая проверка — это отказ, а не успех: если сравнивать нечего,
-    # значит дамп не разобран, и «норма» тут вводит в заблуждение.
     checks.append(("Персональные данные из колонок в результате",
                    f"{len(leaked_cols)} из {len(col_vals)}",
-                   bool(col_vals) and not leaked_cols))
+                   итог(col_vals, not leaked_cols)))
 
     # 2. Значения строгого формата
     fmt_vals = pii_patterns.find_values(src)
     leaked_fmt = sorted(v for v in fmt_vals if v in res)
     checks.append(("Данные строгого формата в результате",
-                   f"{len(leaked_fmt)} из {len(fmt_vals)}", not leaked_fmt))
+                   f"{len(leaked_fmt)} из {len(fmt_vals)}",
+                   итог(fmt_vals, not leaked_fmt)))
 
     # 3. Число строк
     a, b = row_counts(src_path), row_counts(out_path)
-    same_rows = bool(a) and a == b
     checks.append(("Число строк по таблицам",
-                   " / ".join(f"{t}:{b.get(t, 0)}" for t in sorted(a)), same_rows))
+                   " / ".join(f"{t}:{b.get(t, 0)}" for t in sorted(a)),
+                   итог(a, a == b)))
 
     # 4. Разнообразие
     da, db = diversity(src_path), diversity(out_path)
     lost = {k: (da[k], db[k]) for k in da if k in db and db[k] < da[k]}
     checks.append(("Разнообразие значений",
                    "совпадает везде" if not lost else f"упало в {len(lost)} полях",
-                   bool(da) and not lost))
+                   итог(da, not lost)))
 
     # 5. Сквозная замена — проверяется прямо, а не по числу уникальных значений.
     #    Для каждой пары «было → стало» число вхождений обязано совпасть:
@@ -185,11 +202,12 @@ def main(src_path, out_path):
             mismatch.append((original, was, became))
     checks.append(("Сквозная замена: число вхождений «было» = «стало»",
                    f"пар проверено {len(pairs)}, расхождений {len(mismatch)}",
-                   bool(pairs) and not mismatch))
+                   итог(pairs, not mismatch)))
 
     grown = {k: (da[k], db[k]) for k in da if k in db and db[k] > da[k]}
     checks.append(("Одно значение не получило двух замен",
-                   "норма" if not grown else f"нарушено в {len(grown)} полях", not grown))
+                   "норма" if not grown else f"нарушено в {len(grown)} полях",
+                   итог(da, not grown)))
 
     # 6. Контрольные суммы порождённых значений
     produced = pii_patterns.find_values(res)
@@ -203,17 +221,19 @@ def main(src_path, out_path):
     if примеры:
         результат += f" — {', '.join(примеры)}"
     checks.append(("Ссылочная целостность: внешние ключи указывают на существующие строки",
-                   результат, связей > 0 and осиротело == 0))
+                   результат, итог(связей, осиротело == 0)))
 
     checks.append(("Контрольные суммы порождённых ИНН и СНИЛС",
-                   f"проверено {len(produced)}, неверных {len(bad)}", not bad))
+                   f"проверено {len(produced)}, неверных {len(bad)}",
+                   итог(produced, not bad)))
 
     width = max(len(name) for name, _, _ in checks)
     print()
     print(f"{'Проверка'.ljust(width)}  {'Результат'.ljust(24)}  Итог")
     print("-" * (width + 36))
     for name, value, ok in checks:
-        print(f"{name.ljust(width)}  {value.ljust(24)}  {'норма' if ok else 'НАРУШЕНО'}")
+        метка = "норма" if ok else ("НЕ ПРОВЕРЕНО" if ok is None else "НАРУШЕНО")
+        print(f"{name.ljust(width)}  {value.ljust(24)}  {метка}")
     print()
 
     if leaked_cols[:3]:
@@ -223,9 +243,15 @@ def main(src_path, out_path):
     if mismatch[:3]:
         print("Примеры расхождений по числу вхождений:", mismatch[:3])
 
-    failed = [n for n, _, ok in checks if not ok]
-    if failed:
-        print(f"Провалено проверок: {len(failed)}")
+    нарушено = [n for n, _, ok in checks if ok is False]
+    пусто = [n for n, _, ok in checks if ok is None]
+    if нарушено:
+        print(f"Провалено проверок: {len(нарушено)}")
+    if пусто:
+        print(f"Проверок не с чем было сравнивать: {len(пусто)}. "
+              "Это не успех: на чужой схеме так выглядит незаполненный перечень "
+              "колонок в pii_columns.COLUMNS — заполните его по отчёту сканера.")
+    if нарушено or пусто:
         return 1
     print("Все проверки пройдены.")
     return 0

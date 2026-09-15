@@ -19,6 +19,7 @@ from sanitizer import paths, pii_patterns
 from sanitizer.checks import verify
 
 README = (paths.КОРЕНЬ / "README.md").read_text(encoding="utf-8")
+ДЛЯ_АГЕНТА = (paths.КОРЕНЬ / "AGENTS.md").read_text(encoding="utf-8")
 ДАМП = paths.данные("demo_dump.sql")
 
 
@@ -83,7 +84,7 @@ def test_нет_ссылок_на_несуществующие_файлы():
     import re
     пропустить = ("http", "#", "mailto:")
     битые = []
-    for имя in set(re.findall(r"\[[^\]]+\]\(([^)]+)\)", README)):
+    for имя in set(re.findall(r"\[[^\]]+\]\(([^)]+)\)", README + ДЛЯ_АГЕНТА)):
         if имя.startswith(пропустить):
             continue
         if not (paths.КОРЕНЬ / имя.split("#")[0]).exists():

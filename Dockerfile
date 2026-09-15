@@ -35,7 +35,7 @@ WORKDIR /app
 # Кроме кода в образ попадает то, на что ссылается README: сверка
 # документации с кодом идёт внутри прогона, значит эти файлы ей нужны.
 # Картинки и 800-килобайтный HTML схемы не копируются — только её источник.
-COPY pyproject.toml README.md llms.txt ./
+COPY pyproject.toml README.md AGENTS.md ./
 COPY tests  ./tests
 COPY docs/architecture.archify.json ./docs/
 COPY src    ./src

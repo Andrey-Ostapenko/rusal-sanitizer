@@ -26,11 +26,10 @@ import sys
 from . import pii_patterns
 from .sql_parse import parse_inserts, unquote
 
-# Колонки, из которых берутся исходные значения. Совпадают с обработанными в myanon.conf.template.
-PII_COLUMNS = {
-    "customers": ["full_name", "email", "phone", "inn", "address"],
-    "employees": ["full_name", "snils", "email"],
-}
+# Перечень колонок — общие данные, а не константа этого модуля: им же
+# пользуется проверка, и брать его отсюда значило бы строить проверяющего
+# на коде проверяемого. См. pii_columns.py.
+from .pii_columns import COLUMNS as PII_COLUMNS
 
 # Минимальная длина значения, участвующего в замене. Защита от того, чтобы
 # короткое значение случайно совпало с фрагментом постороннего текста.

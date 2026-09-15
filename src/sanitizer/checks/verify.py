@@ -19,7 +19,7 @@ import sys
 
 from .. import pii_patterns
 from ..sql_parse import parse_inserts, unquote
-from ..text_substitute import PII_COLUMNS, build_map
+from ..pii_columns import COLUMNS as PII_COLUMNS
 
 # Комментарии, которые myanon дописывает в хвост дампа: содержат время
 # выполнения и потому меняются от прогона к прогону. При сравнении двух
@@ -29,6 +29,37 @@ NOISE = re.compile(r"-- (?:Total execution time|Time spent for anonymization):.*
 
 def strip_noise(text):
     return NOISE.sub("", text)
+
+
+def _пары(src_path, out_path):
+    """
+    Карта «было → стало», построенная независимо от слоя подстановки.
+
+    Это намеренное дублирование, а не недосмотр. Раньше проверка брала карту
+    у `text_substitute` — того самого модуля, который эти замены и делает.
+    Ошибка в построении карты была бы для проверки невидимой: обе стороны
+    пользовались бы одним и тем же неверным результатом. Здесь пары
+    восстанавливаются заново, сопоставлением дампов по позиции строк.
+    """
+    src, out = parse_inserts(src_path), parse_inserts(out_path)
+    пары = {}
+    for table, columns in PII_COLUMNS.items():
+        if table not in src or table not in out:
+            continue
+        s_cols, s_rows = src[table]
+        o_cols, o_rows = out[table]
+        if len(s_rows) != len(o_rows):
+            continue
+        for col in columns:
+            if col not in s_cols or col not in o_cols:
+                continue
+            si, oi = s_cols.index(col), o_cols.index(col)
+            for s_row, o_row in zip(s_rows, o_rows):
+                было, стало = unquote(s_row[si]), unquote(o_row[oi])
+                if было == стало or len(было) < 5:
+                    continue
+                пары.setdefault(было, стало)
+    return пары
 
 
 def column_values(path):
@@ -101,7 +132,7 @@ def main(src_path, out_path):
     #    если исходное значение встречалось трижды, замена обязана встретиться
     #    трижды. Меньше — значит где-то не заменили, больше — значит замена
     #    совпала с посторонним текстом.
-    pairs = build_map(src_path, out_path)
+    pairs = _пары(src_path, out_path)
     mismatch = []
     for original, replacement in pairs.items():
         was, became = src.count(original), res.count(replacement)

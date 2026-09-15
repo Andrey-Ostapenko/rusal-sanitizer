@@ -43,6 +43,51 @@ MIN_VALUE_LEN = 5
 
 
 
+def найти_имена(src_path, src_text, secret, exclude):
+    """
+    Карта «имя из свободного текста → нейтральная замена».
+
+    Модель смотрит только на колонки свободного текста: в остальных значение
+    целиком берёт myanon по конфигу. Находки проходят два детерминированных
+    фильтра из loop_guard: засчитывается только то, что есть во ВХОДНОМ дампе
+    (иначе цикл гонялся бы за собственными заменами), и отбрасывается вложенное
+    в уже покрытое значение.
+    """
+    from . import detect as детектор
+    from . import loop_guard
+    from .db_schema import parse_schema
+    from .scan_columns import СВОБОДНЫЙ_ТЕКСТ
+
+    схема, данные = parse_schema(src_path), parse_inserts(src_path)
+    найдено = []
+    осмотрено = 0
+    for таблица, инфо in схема.items():
+        if таблица not in данные:
+            continue
+        колонки, строки = данные[таблица]
+        for имя, тип in инфо["columns"]:
+            if тип not in СВОБОДНЫЙ_ТЕКСТ or имя not in колонки:
+                continue
+            i = колонки.index(имя)
+            for строка in строки:
+                значение = unquote(строка[i])
+                if not значение:
+                    continue
+                осмотрено += 1
+                найдено.extend(детектор.detect(значение))
+
+    сырых = len(найдено)
+    найдено, не_во_входе = loop_guard.actionable(найдено, src_text)
+    найдено, вложенные = loop_guard.убрать_вложенные(найдено, exclude)
+    карта = {f["значение"]: pii_patterns.fake_name(f["значение"], secret)
+             for f in найдено if f["значение"] not in exclude}
+    print(f"  детектор имён: осмотрено значений {осмотрено}, "
+          f"сырых находок {сырых}, отброшено фильтрами "
+          f"{len(не_во_входе)} (нет во входном дампе) + {len(вложенные)} "
+          f"(вложены в уже покрытое), принято {len(карта)}")
+    return карта
+
+
 def build_map(src_path, san_path):
     src, san = parse_inserts(src_path), parse_inserts(san_path)
     mapping = {}
@@ -96,8 +141,19 @@ def main(src_path, san_path, out_path):
         src_text = open(src_path, encoding="utf-8").read()
         by_format = pii_patterns.build_replacements(src_text, secret, exclude=set(mapping))
         mapping.update(by_format)
+
+        # Имена людей в свободном тексте — единственный вид ПДн, у которого нет
+        # ни строгого формата, ни источника в колонках. Их ищет модель.
+        #
+        # Выключено по умолчанию намеренно: прогон обязан воспроизводиться на
+        # машине без модели и без сети, иначе проверка «тот же ключ — тот же
+        # результат» перестаёт что-либо значить. Включается DETECT_NAMES=1.
+        by_name = {}
+        if os.environ.get("DETECT_NAMES") == "1":
+            by_name = найти_имена(src_path, src_text, secret, exclude=set(mapping))
+            mapping.update(by_name)
     else:
-        by_format = {}
+        by_format, by_name = {}, {}
         print("  внимание: SANITIZE_SECRET не задан, распознавание по формату пропущено",
               file=sys.stderr)
 
@@ -128,7 +184,8 @@ def main(src_path, san_path, out_path):
         f.write(text)
 
     print(f"Значений в карте замен: {len(mapping)}"
-          f" (из колонок: {known}, распознано по формату: {len(by_format)})")
+          f" (из колонок: {known}, распознано по формату: {len(by_format)},"
+          f" имён из текста: {len(by_name)})")
     print(f"Значений, реально найденных в тексте: {applied}")
     print(f"Всего подстановок: {total}")
     print(f"Записано: {out_path}")

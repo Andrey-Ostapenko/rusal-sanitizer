@@ -43,6 +43,12 @@ services:
       # ${VAR:?} в compose требует переменную для ЛЮБОЙ команды, включая
       # build, config и ps, где секрет не нужен и требовать его неверно.
       SANITIZE_SECRET: ${SANITIZE_SECRET:-}
+      # Детектор имён в свободном тексте. Выключен по умолчанию: прогон должен
+      # воспроизводиться на машине без модели и без сети. Включение:
+      #   DETECT_NAMES=1 LLM_ENDPOINT=http://host.docker.internal:12434/engines/v1/chat/completions \
+      #   SANITIZE_SECRET='...' docker compose up
+      DETECT_NAMES: ${DETECT_NAMES:-}
+      LLM_ENDPOINT: ${LLM_ENDPOINT:-}
       # Языковая модель здесь не нужна и не вызывается. Она порождает пул
       # правдоподобных ФИО заранее (`python3 llm_names.py build` на машине,
       # где модель доступна), пул лежит в name_pool.json и вложен в образ.

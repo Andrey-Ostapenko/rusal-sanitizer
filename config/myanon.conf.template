@@ -20,4 +20,12 @@ tables = {
     `email`     = emailhash 'rusal-demo.local' 10
     `full_name` = texthash 30
   }
+
+  `orders` = {
+    `amount`    = inthash 8
+  }
+
+  `payments` = {
+    `amount`    = inthash 8
+  }
 }

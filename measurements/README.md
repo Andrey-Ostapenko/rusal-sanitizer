@@ -9,6 +9,7 @@
 | `scan_sakila_official.json` | сканер на официальном дистрибутиве sakila 1.5: 9 принято, 44 отброшено |
 | `scan_sakila_mirror.json` | то же на зеркале sakila 0.8 — состав совпадает с официальным |
 | `detect_report.json` | детектор имён на контрольном наборе: полнота, точность, время |
+| `bench_replace.json` | отвергнутый сценарий «модель сама придумывает замены»: 20 ФИО с 10 фамилиями → 7 ФИО с 4 фамилиями |
 
 Два отчёта по sakila лежат рядом намеренно: они сняты после правки, которая
 убрала `NULL` из образцов, и служат доказательством, что после неё два разных
@@ -19,6 +20,7 @@
 ```
 PYTHONPATH=src python3 -m sanitizer.scan_columns data/demo_dump.sql отчёт.json
 PYTHONPATH=src python3 -m sanitizer.detect measure
+PYTHONPATH=src python3 scripts/bench_model.py ai/qwen3:14b-q4_K_M 10 20
 ```
 
 Оба требуют запущенной языковой модели по адресу из `LLM_ENDPOINT`.

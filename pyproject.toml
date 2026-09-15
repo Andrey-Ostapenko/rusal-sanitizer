@@ -13,9 +13,6 @@ dependencies = []
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[tool.setuptools.package-data]
-sanitizer = ["name_pool.json"]
-
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]

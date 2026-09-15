@@ -950,6 +950,21 @@ SANITIZE_SECRET='ваш-ключ' docker compose up --build
 С флагом прогон вызывает языковую модель на каждом значении свободного текста
 и перестаёт воспроизводиться на машине без модели. Без флага — воспроизводится.
 
+Прогнать тесты (pytest в поставку не входит, ставится разово в контейнер):
+
+```
+docker run --rm --entrypoint sh -v "$PWD":/src -w /src \
+  rusal-sanitizer-sanitizer:latest -c "pip install -q pytest && python3 -m pytest tests -q"
+```
+
+Отдельно самопроверки модулей, модель им не нужна (из корня репозитория —
+пакет лежит в `src/`, поэтому нужен `PYTHONPATH`):
+
+```
+PYTHONPATH=src python3 -m sanitizer.pii_columns
+PYTHONPATH=src python3 -m sanitizer.config_builder --самопроверка
+```
+
 Настроить конфиг по новой базе (фаза настройки, требует модели):
 
 ```
@@ -971,7 +986,7 @@ src/sanitizer/checks/  восемь проверок и детерминиров
 scripts/               оркестрация: sanitize.sh, entrypoint.sh, генератор демо-данных
 config/                шаблон конфига myanon
 data/                  демо-дамп и эталонный набор из 27 размеченных записей
-tests/                 тест пригодности эталонного набора
+tests/                 тесты: пригодность эталонного набора, фильтры сканера
 docs/                  схема архитектуры
 ```
 

@@ -55,7 +55,7 @@ def найти_имена(src_path, src_text, secret, exclude):
     from . import detect as детектор
     from . import loop_guard
     from .db_schema import parse_schema
-    from .scan_columns import СВОБОДНЫЙ_ТЕКСТ
+    from .pii_columns import FREE_TEXT_TYPES as СВОБОДНЫЙ_ТЕКСТ
 
     схема, данные = parse_schema(src_path), parse_inserts(src_path)
     найдено = []

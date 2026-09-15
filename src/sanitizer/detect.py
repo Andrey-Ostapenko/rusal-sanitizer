@@ -4,7 +4,8 @@
 
 Роль модели в решении — НАХОДИТЬ, а не порождать замены. Порождение отвергнуто
 замером: при независимых вызовах модель тяготеет к частотным значениям и
-схлопывает разнообразие (`claude/poc_run_4_model.md`). Найденное заменяет
+схлопывает разнообразие — замер в `measurements/bench_replace.json`:
+20 ФИО с 10 фамилиями превратились в 7 с 4. Найденное заменяет
 детерминированный механизм, у которого разнообразие гарантировано построением.
 
 Детектор ищет ТОЛЬКО имена людей. Обоснование, а не экономия:
@@ -90,7 +91,7 @@ def measure(set_path=None, out="detect_report.json"):
     set_path = set_path or paths.данные("control_set.json")
     from . import control_check as cc
     from . import loop_guard
-    from . import pii_patterns
+    from . import pii_patterns  # noqa: F401 — используются ниже
 
     сырых = отброшено_вложенных = 0
 
@@ -185,7 +186,6 @@ def measure(set_path=None, out="detect_report.json"):
     print(f"Время          : {отчёт['секунд']} с на {len(записи)} записей")
     print(f"Отчёт          : {out}")
 
-    from . import loop_guard
     можно, причина = loop_guard.старт_разрешён(полнота, точность, set_path)
     print(f"\nСтарт цикла    : {'разрешён' if можно else 'ЗАПРЕЩЁН'} — {причина}")
     return 0 if (можно and not ошибок) else 1

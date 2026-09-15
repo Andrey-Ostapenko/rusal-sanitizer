@@ -15,7 +15,8 @@
 это и есть та дыра, которую детерминированный слой не закрывает (замерено:
 `control_check.py` показывает 0 из 10).
 
-Замер — `python3 llm_detect.py measure`. Результат кладётся в detect_report.json.
+Замер — `python3 -m sanitizer.detect measure`. Результат кладётся
+в detect_report.json.
 """
 from . import paths
 import json
@@ -79,7 +80,6 @@ def detect(текст):
 
 
 def measure(set_path=None, out="detect_report.json"):
-    set_path = set_path or paths.данные("control_set.json")
     """
     Полнота и точность детектора на контрольном наборе.
 
@@ -87,6 +87,7 @@ def measure(set_path=None, out="detect_report.json"):
     проверено на заведомо испорченных вариантах. Отдельное сравнение здесь
     было бы четвёртым местом, где эту ошибку можно повторить.
     """
+    set_path = set_path or paths.данные("control_set.json")
     from . import control_check as cc
     from . import loop_guard
     from . import pii_patterns

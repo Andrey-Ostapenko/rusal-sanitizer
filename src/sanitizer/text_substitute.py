@@ -20,7 +20,6 @@
     python3 text_substitute.py исходный.sql очищенный.sql итоговый.sql
 """
 import os
-import re
 import sys
 
 from . import pii_patterns

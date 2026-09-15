@@ -22,7 +22,6 @@ import tempfile
 from ..paths import SCRIPTS
 from .verify import strip_noise
 
-HERE = os.path.dirname(os.path.abspath(__file__))
 SANITIZE = str(SCRIPTS / "sanitize.sh")
 
 

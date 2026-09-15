@@ -41,8 +41,11 @@ echo "Исходная база $SRC_DB загружена."
 
 echo
 echo "Выгружаю базу в дамп..."
+# --hex-blob обязателен: без него двоичные колонки попадают в дамп как сырые
+# байты, и разбор падает на не-UTF-8. Найдено на публичной базе sakila, где
+# есть staff.picture типа BLOB.
 mysqldump $SSL -h "$HOST" -u "$USER" -p"$PASS" \
-          --skip-extended-insert --complete-insert --no-tablespaces \
+          --skip-extended-insert --complete-insert --no-tablespaces --hex-blob \
           "$SRC_DB" > "$WORK/source.sql"
 
 echo "Санитизация..."

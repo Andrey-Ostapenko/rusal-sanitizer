@@ -19,7 +19,16 @@ COLUMN = re.compile(r"^\s*`(\w+)`\s+([a-z]+)", re.I)
 KEY_LINE = re.compile(r"^\s*(?:PRIMARY\s+KEY|UNIQUE\s+KEY|KEY|CONSTRAINT|FOREIGN\s+KEY)", re.I)
 IN_BACKTICKS = re.compile(r"`(\w+)`")
 FK_COLS = re.compile(r"FOREIGN\s+KEY\s*\(([^)]*)\)", re.I)
-KEY_COLS = re.compile(r"(?:PRIMARY\s+KEY|UNIQUE\s+KEY|KEY)\s*(?:`\w+`\s*)?\(([^)]*)\)", re.I)
+# Ключевыми считаются только те колонки, хеширование которых ломает базу:
+# первичный ключ, уникальный ключ и внешний ключ. Обычный индекс (`KEY`)
+# сюда НЕ входит — он не задаёт ни связи, ни тождества, и колонку под ним
+# санитизировать можно и нужно.
+#
+# Найдено прогоном на публичной базе sakila: там `actor.last_name`
+# и `customer.last_name` проиндексированы обычным KEY, и прежний разбор
+# исключал фамилии из обработки. На реальной схеме фамилия под индексом —
+# обычное дело, то есть это был класс утечки, а не частный случай.
+KEY_COLS = re.compile(r"(?:PRIMARY\s+KEY|UNIQUE\s+KEY)\s*(?:`\w+`\s*)?\(([^)]*)\)", re.I)
 
 
 def parse_schema(path):

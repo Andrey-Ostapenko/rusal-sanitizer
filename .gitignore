@@ -18,3 +18,4 @@ graphify-out/
 # на которые ссылается README, лежат в measurements/ и версионируются.
 /scan_report.json
 /detect_report.json
+/bench_replace_report.json

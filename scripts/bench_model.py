@@ -17,9 +17,10 @@
 Модель вызывается через шлюз Docker Model Runner, совместимый с OpenAI API.
 
 Использование:
-    python3 scripts/bench_model.py [имя_модели] [сколько_строк]
+    python3 scripts/bench_model.py [имя_модели] [строк_для_задачи_А] [ФИО_для_задачи_Б]
 """
 import json
+import os
 import re
 import sys
 import urllib.error
@@ -35,7 +36,11 @@ except ImportError:  # запуск из исходников, пакет не �
     from sanitizer import paths
     from sanitizer.sql_parse import parse_inserts, unquote
 
-ENDPOINT = "http://localhost:12434/engines/v1/chat/completions"
+# Адрес модели — только из окружения, как во всех остальных модулях.
+# Прибитый адрес здесь нарушал собственное правило проекта: замер шёл бы
+# мимо LLM_ENDPOINT и молча бил в localhost.
+ENDPOINT = os.environ.get(
+    "LLM_ENDPOINT", "http://localhost:12434/engines/v1/chat/completions")
 DEFAULT_MODEL = "ai/qwen3:14b-q4_K_M"
 
 PROMPT_FIND = (

@@ -35,12 +35,6 @@ from .pii_columns import COLUMNS as PII_COLUMNS
 MIN_VALUE_LEN = 5
 
 
-
-
-
-
-
-
 def найти_имена(src_path, src_text, secret, exclude):
     """
     Карта «имя из свободного текста → нейтральная замена».

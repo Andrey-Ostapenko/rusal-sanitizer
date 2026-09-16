@@ -25,6 +25,10 @@ import sys
 from .. import pii_patterns
 from ..sql_parse import parse_inserts, unquote
 from ..pii_columns import COLUMNS as PII_COLUMNS
+# Порог берётся из слоя подстановки, а не дублируется литералом: значения
+# короче него не заменяются, и проверять их поэтому бессмысленно. Дубль
+# литерала разъехался бы молча.
+from ..text_substitute import MIN_VALUE_LEN
 
 # Комментарии, которые myanon дописывает в хвост дампа: содержат время
 # выполнения и потому меняются от прогона к прогону. При сравнении двух
@@ -61,7 +65,7 @@ def _пары(src_path, out_path):
             si, oi = s_cols.index(col), o_cols.index(col)
             for s_row, o_row in zip(s_rows, o_rows):
                 было, стало = unquote(s_row[si]), unquote(o_row[oi])
-                if было == стало or len(было) < 5:
+                if было == стало or len(было) < MIN_VALUE_LEN:
                     continue
                 пары.setdefault(было, стало)
     return пары
@@ -144,7 +148,7 @@ def column_values(path):
             i = cols.index(col)
             for row in rows:
                 v = unquote(row[i])
-                if len(v) >= 5:
+                if len(v) >= MIN_VALUE_LEN:
                     out.add(v)
     return out
 
@@ -228,9 +232,13 @@ def main(src_path, out_path):
     checks.append(("Ссылочная целостность: внешние ключи указывают на существующие строки",
                    результат, итог(связей, осиротело == 0)))
 
+    # Сравнение с исходным числом обязательно: без него проверка считает
+    # только найденное в результате, и падение 139 -> 70 прошло бы как
+    # «норма» — потеря значений выглядела бы как успех.
     checks.append(("Контрольные суммы порождённых ИНН и СНИЛС",
-                   f"проверено {len(produced)}, неверных {len(bad)}",
-                   итог(produced, not bad)))
+                   f"проверено {len(produced)} из {len(fmt_vals)}, "
+                   f"неверных {len(bad)}",
+                   итог(produced, not bad and len(produced) == len(fmt_vals))))
 
     width = max(len(name) for name, _, _ in checks)
     print()

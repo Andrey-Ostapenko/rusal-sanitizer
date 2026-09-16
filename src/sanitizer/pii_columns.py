@@ -37,6 +37,14 @@ BINARY_TYPES = {"blob", "tinyblob", "mediumblob", "longblob", "binary", "varbina
 # Этим перечнем пользуется сканер; детектор берёт только FREE_TEXT_TYPES.
 NO_RULE_TYPES = FREE_TEXT_TYPES | BINARY_TYPES
 
+# Значения короче этого порога не заменяются: подстановка идёт по всему
+# тексту дампа, и на коротких строках она цепляла бы куски слов. Проверяющий
+# пользуется тем же порогом — иначе он требовал бы замен, которых по
+# построению нет. Лежит здесь, а не в text_substitute: импортировать порог
+# из проверяемого модуля значило бы вернуть ту самую связь, которую
+# развязка и убирала.
+MIN_VALUE_LEN = 5
+
 COLUMNS = {
     "customers": ["full_name", "email", "phone", "inn", "address"],
     "employees": ["full_name", "snils", "email"],

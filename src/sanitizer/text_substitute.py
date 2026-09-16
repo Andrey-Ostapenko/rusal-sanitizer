@@ -32,7 +32,7 @@ from .pii_columns import COLUMNS as PII_COLUMNS
 
 # Минимальная длина значения, участвующего в замене. Защита от того, чтобы
 # короткое значение случайно совпало с фрагментом постороннего текста.
-MIN_VALUE_LEN = 5
+from .pii_columns import MIN_VALUE_LEN  # noqa: F401 — общий порог
 
 
 def найти_имена(src_path, src_text, secret, exclude):

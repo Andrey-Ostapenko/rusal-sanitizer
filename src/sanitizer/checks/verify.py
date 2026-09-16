@@ -25,10 +25,8 @@ import sys
 from .. import pii_patterns
 from ..sql_parse import parse_inserts, unquote
 from ..pii_columns import COLUMNS as PII_COLUMNS
-# Порог берётся из слоя подстановки, а не дублируется литералом: значения
-# короче него не заменяются, и проверять их поэтому бессмысленно. Дубль
-# литерала разъехался бы молча.
-from ..text_substitute import MIN_VALUE_LEN
+# Порог берётся из общих данных, а не из проверяемого модуля и не литералом.
+from ..pii_columns import MIN_VALUE_LEN
 
 # Комментарии, которые myanon дописывает в хвост дампа: содержат время
 # выполнения и потому меняются от прогона к прогону. При сравнении двух

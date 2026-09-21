@@ -123,7 +123,9 @@ SANITIZE_SECRET='ваш-ключ' docker compose up --build
 [`docs/architecture.archify.json`](docs/architecture.archify.json) — её можно
 пересобрать и проверить на пересечения линий и наложения подписей машинно, а не
 глазами. Интерактивная версия с переключением между фазами —
-`docs/architecture.html`.
+[открыть в браузере](https://andrey-ostapenko.github.io/rusal-sanitizer/docs/architecture.html)
+(исходник — `docs/architecture.html`; на github.com HTML показывается как код,
+поэтому ссылка ведёт на GitHub Pages).
 
 Исходный дамп нужен обоим этапам: по паре «исходный / после этапа 1» второй
 этап восстанавливает, чем myanon заменил каждое значение.

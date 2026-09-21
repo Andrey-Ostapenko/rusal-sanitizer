@@ -91,6 +91,31 @@ PYTHONPATH=src python3 scripts/bench_model.py ai/qwen3:14b-q4_K_M 10 20
 - Не «чинить» падающие проверки ослаблением условия. Если проверка
   падает — падает поведение.
 
+## Порядок вызова
+
+Порядок задают два shell-скрипта, а не Python: модули пакета запускаются
+только из них или командами фазы настройки из раздела «Тесты и самопроверки», остальное подключается
+импортом.
+
+Прогон — `scripts/entrypoint.sh`, точка входа образа:
+
+1. `pytest` — тесты и сверка README с кодом;
+2. `scripts/generate_demo_dump.py` — демо-база, загрузка в MySQL;
+3. `mysqldump` — исходный дамп;
+4. `scripts/sanitize.sh`, внутри два этапа:
+   - этап 1 — `myanon` по конфигу `config/myanon.conf.template`;
+   - этап 2 — `sanitizer.text_substitute`; импортирует `pii_patterns`,
+     `sql_parse`, `pii_columns`, а при `DETECT_NAMES=1` ещё `detect` и `loop_guard`;
+5. загрузка очищенного дампа во вторую базу;
+6. `sanitizer.checks.verify` — восемь проверок;
+7. `sanitizer.checks.determinism` — тот же ключ, тот же результат.
+
+Настройка — вручную, раз на новую базу: `sanitizer.scan_columns` →
+`sanitizer.config_builder` → человек смотрит дифф конфига.
+
+Этот список сверяется с самими скриптами тестом `tests/test_call_order.py`:
+переставят шаги в скрипте — упадёт тест, а не устареет документ.
+
 ## Где что лежит
 
 | Путь | Что |
